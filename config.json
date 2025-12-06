@@ -1,0 +1,96 @@
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/dev/stdout",
+    "error": "/dev/stderr"
+  },
+  "inbounds": [
+    {
+      "port": 8080,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "481cd88d-9b52-44a0-b8cd-f28a833a70ec",
+            "flow": ""
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/@zero1011",
+          "headers": {
+            "Host": ""
+          }
+        },
+        "security": "none"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {},
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "settings": {},
+      "tag": "blocked"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "domain": [
+          "geosite:google",
+          "geosite:facebook",
+          "geosite:twitter",
+          "geosite:telegram",
+          "geosite:whatsapp",
+          "geosite:netflix",
+          "geosite:youtube",
+          "geosite:github",
+          "geosite:cloudflare",
+          "geosite:openai",
+          "geosite:google-scholar",
+          "domain:firebaseremoteconfig.googleapis.com"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "ip": [
+          "geoip:private",
+          "geoip:cn",
+          "8.8.8.8/32",
+          "1.1.1.1/32"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "blocked",
+        "domain": [
+          "geosite:category-ads-all"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "network": "udp,tcp"
+      }
+    ]
+  },
+  "dns": {
+    "servers": [
+      "8.8.8.8",
+      "1.1.1.1",
+      "localhost"
+    ]
+  }
+}
