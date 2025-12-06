@@ -31,11 +31,12 @@ printf "║    ${C_RED} / /__  | |____| | \ \| |__| |    | || |_| || || |       
 printf "║    ${C_RED}/_____| |______|_|  \_\\____/     |_| \___/ |_||_|        ${C_CYAN}\n"
 printf "║                                                                  \n"
 printf "║         ${C_YEL}🚀 ALL-IN-ONE DEPLOYMENT (VLESS + VMESS + TROJAN)       ${C_CYAN}\n"
-printf "║         ${C_GREEN}⚡ Powered by ZERO_1011 (Docker: mgmyomin1)             ${C_CYAN}\n"
+printf "║         ${C_GREEN}⚡ Powered by ZERO_1011                                 ${C_CYAN}\n"
 printf "║                                                                  \n"
 printf "╚══════════════════════════════════════════════════════════════════╝${RESET}\n\n"
 
-# ===== Telegram Setup =====
+# ===== Telegram Setup (Step 1) =====
+printf "${C_PURPLE}┌── Step 1: Telegram Configuration ────────────────────────┐${RESET}\n"
 TELEGRAM_TOKEN="${TELEGRAM_TOKEN:-}"
 TELEGRAM_CHAT_IDS="${TELEGRAM_CHAT_IDS:-${TELEGRAM_CHAT_ID:-}}"
 
@@ -43,7 +44,6 @@ if [[ ( -z "${TELEGRAM_TOKEN}" || -z "${TELEGRAM_CHAT_IDS}" ) && -f .env ]]; the
   set -a; source ./.env; set +a
 fi
 
-printf "${C_PURPLE}┌── Telegram Configuration ────────────────────────────────┐${RESET}\n"
 read -rp "${C_GREEN}🤖 Bot Token (Optional):${RESET} " _tk || true
 [[ -n "${_tk:-}" ]] && TELEGRAM_TOKEN="$_tk"
 
@@ -64,7 +64,7 @@ tg_send(){
   printf "${C_GREEN}✓ Telegram notification sent.${RESET}\n"
 }
 
-# ===== Project Check =====
+# ===== Project Check (Step 2) =====
 PROJECT="$(gcloud config get-value project 2>/dev/null || true)"
 if [[ -z "$PROJECT" ]]; then
   printf "${C_RED}❌ Error: No Active GCP Project Found.${RESET}\n"
@@ -72,13 +72,14 @@ if [[ -z "$PROJECT" ]]; then
   exit 1
 fi
 
-# ===== Configuration =====
+# ===== Configuration (Step 3) =====
+# Docker Image from mgmyomin1 (System Only)
 IMAGE="docker.io/mgmyomin1/vless-ws:latest"
 UUID="562572c6-d933-4c91-8633-d9222414777e"
 TROJAN_PW="Trojan-MgMyoMin1"
 
-# ===== Region Selection =====
-printf "\n${C_PURPLE}┌── Select Region ─────────────────────────────────────────┐${RESET}\n"
+# ===== Region Selection (Step 4) =====
+printf "\n${C_PURPLE}┌── Step 4: Select Region ─────────────────────────────────┐${RESET}\n"
 echo "  1) 🇸🇬 Singapore (asia-southeast1) - Recommended"
 echo "  2) 🇺🇸 US Central (us-central1)"
 echo "  3) 🇯🇵 Japan (asia-northeast1)"
@@ -94,23 +95,38 @@ case "${_r:-1}" in
   *) REGION="asia-southeast1" ;;
 esac
 
-# ===== Resource Selection (Added Step) =====
-printf "\n${C_PURPLE}┌── Resources Selection ───────────────────────────────────┐${RESET}\n"
-read -rp "${C_GREEN}CPU Cores [1/2/4/6, default 2]:${RESET} " _cpu || true
+# ===== Resource Selection (Step 5 - CPU/RAM) =====
+printf "\n${C_PURPLE}┌── Step 5: Resources Selection ───────────────────────────┐${RESET}\n"
+echo "  ${C_GREY}CPU Options: 1, 2, 4, 6${RESET}"
+read -rp "${C_GREEN}CPU Cores [default 2]:${RESET} " _cpu || true
 CPU="${_cpu:-2}"
 
-printf "\n${C_GREY}Memory Options: 512Mi, 1Gi, 2Gi, 4Gi, 8Gi${RESET}\n"
+echo "  ${C_GREY}Memory Options: 512Mi, 1Gi, 2Gi, 4Gi, 8Gi${RESET}"
 read -rp "${C_GREEN}Memory [default 2Gi]:${RESET} " _mem || true
 MEMORY="${_mem:-2Gi}"
 printf "${C_PURPLE}└──────────────────────────────────────────────────────────┘${RESET}\n"
 
-# ===== Service Name =====
-read -rp "${C_GREEN}Enter Service Name [default: zero-aio]:${RESET} " _svc
-SERVICE="${_svc:-zero-aio}"
+# ===== Service Name (Step 6) =====
+read -rp "${C_GREEN}Enter Service Name [default: zero-1011]:${RESET} " _svc
+SERVICE="${_svc:-zero-1011}"
 
-# ===== Deploy =====
+# ===== Time Calculation (Step 7 - Start/End Time) =====
+export TZ="Asia/Yangon"
+START_EPOCH="$(date +%s)"
+# 1 Hour Timeout (3600s) default for Cloud Run manual deploy
+END_EPOCH="$(( START_EPOCH + 3600 ))"
+fmt_dt(){ date -d @"$1" "+%d.%m.%Y %I:%M %p"; }
+START_LOCAL="$(fmt_dt "$START_EPOCH")"
+END_LOCAL="$(fmt_dt "$END_EPOCH")"
+
+printf "\n${C_PURPLE}┌── Step 7: Deployment Schedule ───────────────────────────┐${RESET}\n"
+printf "   ${C_GREY}Start Time:${RESET} ${C_CYAN}${START_LOCAL}${RESET}\n"
+printf "   ${C_GREY}End Time:  ${RESET} ${C_CYAN}${END_LOCAL}${RESET}\n"
+printf "${C_PURPLE}└──────────────────────────────────────────────────────────┘${RESET}\n"
+
+# ===== Deploy (Step 9) =====
 printf "\n${C_YEL}🚀 Deploying ZERO_1011 All-in-One Server...${RESET}\n"
-printf "${C_GREY}   (Using Image: $IMAGE | $CPU vCPU | $MEMORY RAM)${RESET}\n"
+printf "${C_GREY}   (Image: $IMAGE | $CPU vCPU | $MEMORY RAM)${RESET}\n"
 
 # Enable APIs quietly
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com --quiet >/dev/null 2>&1
@@ -121,34 +137,37 @@ gcloud run deploy "$SERVICE" \
   --region="$REGION" \
   --memory="$MEMORY" \
   --cpu="$CPU" \
+  --timeout=3600 \
   --allow-unauthenticated \
   --port=8080 \
   --min-instances=1 \
   --quiet
 
-# ===== Result Generation =====
+# ===== Result Generation (Step 10) =====
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')"
 HOST="${SERVICE}-${PROJECT_NUMBER}.${REGION}.run.app"
 
-# Link Generation
+# Link Generation (Using path: tg-1011)
 # 1. VLESS
-VLESS_LINK="vless://${UUID}@vpn.googleapis.com:443?path=%2F%40mgmyomin1-vless&security=tls&encryption=none&host=${HOST}&type=ws&sni=${HOST}#ZERO-VLESS"
+VLESS_LINK="vless://${UUID}@vpn.googleapis.com:443?path=%2F%40tg-1011&security=tls&encryption=none&host=${HOST}&type=ws&sni=${HOST}#ZERO-VLESS"
 
-# 2. VMess
-VMESS_JSON="{\"v\":\"2\",\"ps\":\"ZERO-VMESS\",\"add\":\"vpn.googleapis.com\",\"port\":\"443\",\"id\":\"${UUID}\",\"aid\":\"0\",\"scy\":\"auto\",\"net\":\"ws\",\"type\":\"none\",\"host\":\"${HOST}\",\"path\":\"/@mgmyomin1-vmess\",\"tls\":\"tls\",\"sni\":\"${HOST}\",\"alpn\":\"\"}"
+# 2. VMess (JSON -> Base64)
+VMESS_JSON="{\"v\":\"2\",\"ps\":\"ZERO-VMESS\",\"add\":\"vpn.googleapis.com\",\"port\":\"443\",\"id\":\"${UUID}\",\"aid\":\"0\",\"scy\":\"auto\",\"net\":\"ws\",\"type\":\"none\",\"host\":\"${HOST}\",\"path\":\"/@tg-1011-vmess\",\"tls\":\"tls\",\"sni\":\"${HOST}\",\"alpn\":\"\"}"
 VMESS_BASE64=$(echo -n "$VMESS_JSON" | base64 -w 0)
 VMESS_LINK="vmess://${VMESS_BASE64}"
 
 # 3. Trojan
-TROJAN_LINK="trojan://${TROJAN_PW}@vpn.googleapis.com:443?path=%2F%40mgmyomin1-trojan&security=tls&host=${HOST}&type=ws&sni=${HOST}#ZERO-TROJAN"
+TROJAN_LINK="trojan://${TROJAN_PW}@vpn.googleapis.com:443?path=%2F%40tg-1011-trojan&security=tls&host=${HOST}&type=ws&sni=${HOST}#ZERO-TROJAN"
 
-# ===== Telegram Notification =====
+# ===== Telegram Notification (Branding: ZERO_1011) =====
 MSG=$(cat <<EOF
-✅ <b>ZERO_1011 All-in-One Deployment</b>
+✅ <b>ZERO_1011 Deployment Success</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 <blockquote>🌍 <b>Region:</b> ${REGION}
 🔗 <b>Host:</b> ${HOST}
-⚙️ <b>Resources:</b> ${CPU} vCPU / ${MEMORY} RAM</blockquote>
+⚙️ <b>Resources:</b> ${CPU} vCPU / ${MEMORY}
+🕒 <b>Start:</b> ${START_LOCAL}
+⏳ <b>End:</b> ${END_LOCAL}</blockquote>
 
 <b>1️⃣ VLESS WS:</b>
 <pre><code>${VLESS_LINK}</code></pre>
@@ -159,7 +178,7 @@ MSG=$(cat <<EOF
 <b>3️⃣ Trojan WS:</b>
 <pre><code>${TROJAN_LINK}</code></pre>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-<b>Powered by ZERO_1011 | Docker: mgmyomin1</b>
+<b>Powered by ZERO_1011</b>
 EOF
 )
 
@@ -172,4 +191,6 @@ printf "${C_GREEN}1️⃣ VLESS WS Link:${RESET}\n${VLESS_LINK}\n\n"
 printf "${C_GREEN}2️⃣ VMess WS Link:${RESET}\n${VMESS_LINK}\n\n"
 printf "${C_GREEN}3️⃣ Trojan WS Link:${RESET}\n${TROJAN_LINK}\n\n"
 printf "${C_GREY}──────────────────────────────────────────────────────────${RESET}\n"
-printf "${C_YEL}ℹ️  Copy the links above and import into V2RayNG / v2box.${RESET}\n\n"
+printf "${C_PURPLE}🕒 Start Time: ${START_LOCAL}${RESET}\n"
+printf "${C_PURPLE}⏳ End Time:   ${END_LOCAL}${RESET}\n"
+printf "${C_YEL}ℹ️  Links & Time sent to Telegram!${RESET}\n\n"
