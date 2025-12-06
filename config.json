@@ -11,21 +11,69 @@
       "settings": {
         "clients": [
           {
-            "id": "481cd88d-9b52-44a0-b8cd-f28a833a70ec",
+            "id": "562572c6-d933-4c91-8633-d9222414777e",
             "flow": ""
           }
         ],
-        "decryption": "none"
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "path": "/@mgmyomin1-vmess",
+            "dest": 1001,
+            "xver": 1
+          },
+          {
+            "path": "/@mgmyomin1-trojan",
+            "dest": 1002,
+            "xver": 1
+          }
+        ]
       },
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/@zero1011",
+          "path": "/@mgmyomin1-vless",
           "headers": {
             "Host": ""
           }
         },
         "security": "none"
+      }
+    },
+    {
+      "port": 1001,
+      "listen": "127.0.0.1",
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "562572c6-d933-4c91-8633-d9222414777e"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/@mgmyomin1-vmess"
+        }
+      }
+    },
+    {
+      "port": 1002,
+      "listen": "127.0.0.1",
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "Trojan-MgMyoMin1"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/@mgmyomin1-trojan"
+        }
       }
     }
   ],
@@ -46,51 +94,9 @@
     "rules": [
       {
         "type": "field",
-        "outboundTag": "direct",
-        "domain": [
-          "geosite:google",
-          "geosite:facebook",
-          "geosite:twitter",
-          "geosite:telegram",
-          "geosite:whatsapp",
-          "geosite:netflix",
-          "geosite:youtube",
-          "geosite:github",
-          "geosite:cloudflare",
-          "geosite:openai",
-          "geosite:google-scholar",
-          "domain:firebaseremoteconfig.googleapis.com"
-        ]
-      },
-      {
-        "type": "field",
-        "outboundTag": "direct",
-        "ip": [
-          "geoip:private",
-          "geoip:cn",
-          "8.8.8.8/32",
-          "1.1.1.1/32"
-        ]
-      },
-      {
-        "type": "field",
         "outboundTag": "blocked",
-        "domain": [
-          "geosite:category-ads-all"
-        ]
-      },
-      {
-        "type": "field",
-        "outboundTag": "direct",
-        "network": "udp,tcp"
+        "domain": ["geosite:category-ads-all"]
       }
-    ]
-  },
-  "dns": {
-    "servers": [
-      "8.8.8.8",
-      "1.1.1.1",
-      "localhost"
     ]
   }
 }
