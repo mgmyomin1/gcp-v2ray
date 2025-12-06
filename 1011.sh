@@ -39,7 +39,6 @@ printf "╚═══════════════════════
 TELEGRAM_TOKEN="${TELEGRAM_TOKEN:-}"
 TELEGRAM_CHAT_IDS="${TELEGRAM_CHAT_IDS:-${TELEGRAM_CHAT_ID:-}}"
 
-# Load env if exists
 if [[ ( -z "${TELEGRAM_TOKEN}" || -z "${TELEGRAM_CHAT_IDS}" ) && -f .env ]]; then
   set -a; source ./.env; set +a
 fi
@@ -52,11 +51,9 @@ read -rp "${C_GREEN}👤 Chat ID (Optional):${RESET} " _ids || true
 [[ -n "${_ids:-}" ]] && TELEGRAM_CHAT_IDS="${_ids// /}"
 printf "${C_PURPLE}└──────────────────────────────────────────────────────────┘${RESET}\n\n"
 
-# Telegram Sender Function
 tg_send(){
   local text="$1"
   if [[ -z "${TELEGRAM_TOKEN:-}" || -z "${TELEGRAM_CHAT_IDS:-}" ]]; then return 0; fi
-  
   IFS=',' read -r -a CHAT_ID_ARR <<< "${TELEGRAM_CHAT_IDS}"
   for _cid in "${CHAT_ID_ARR[@]}"; do
     curl -s -S -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
@@ -76,7 +73,6 @@ if [[ -z "$PROJECT" ]]; then
 fi
 
 # ===== Configuration =====
-# Using the VLESS image because config.json (with fallbacks) is bundled there
 IMAGE="docker.io/mgmyomin1/vless-ws:latest"
 UUID="562572c6-d933-4c91-8633-d9222414777e"
 TROJAN_PW="Trojan-MgMyoMin1"
@@ -98,13 +94,23 @@ case "${_r:-1}" in
   *) REGION="asia-southeast1" ;;
 esac
 
+# ===== Resource Selection (Added Step) =====
+printf "\n${C_PURPLE}┌── Resources Selection ───────────────────────────────────┐${RESET}\n"
+read -rp "${C_GREEN}CPU Cores [1/2/4/6, default 2]:${RESET} " _cpu || true
+CPU="${_cpu:-2}"
+
+printf "\n${C_GREY}Memory Options: 512Mi, 1Gi, 2Gi, 4Gi, 8Gi${RESET}\n"
+read -rp "${C_GREEN}Memory [default 2Gi]:${RESET} " _mem || true
+MEMORY="${_mem:-2Gi}"
+printf "${C_PURPLE}└──────────────────────────────────────────────────────────┘${RESET}\n"
+
 # ===== Service Name =====
 read -rp "${C_GREEN}Enter Service Name [default: zero-aio]:${RESET} " _svc
 SERVICE="${_svc:-zero-aio}"
 
 # ===== Deploy =====
 printf "\n${C_YEL}🚀 Deploying ZERO_1011 All-in-One Server...${RESET}\n"
-printf "${C_GREY}   (Using Image: $IMAGE)${RESET}\n"
+printf "${C_GREY}   (Using Image: $IMAGE | $CPU vCPU | $MEMORY RAM)${RESET}\n"
 
 # Enable APIs quietly
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com --quiet >/dev/null 2>&1
@@ -113,8 +119,8 @@ gcloud run deploy "$SERVICE" \
   --image="$IMAGE" \
   --platform=managed \
   --region="$REGION" \
-  --memory="2Gi" \
-  --cpu="2" \
+  --memory="$MEMORY" \
+  --cpu="$CPU" \
   --allow-unauthenticated \
   --port=8080 \
   --min-instances=1 \
@@ -125,15 +131,15 @@ PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNum
 HOST="${SERVICE}-${PROJECT_NUMBER}.${REGION}.run.app"
 
 # Link Generation
-# 1. VLESS WS Link
+# 1. VLESS
 VLESS_LINK="vless://${UUID}@vpn.googleapis.com:443?path=%2F%40mgmyomin1-vless&security=tls&encryption=none&host=${HOST}&type=ws&sni=${HOST}#ZERO-VLESS"
 
-# 2. VMess WS Link (JSON -> Base64)
+# 2. VMess
 VMESS_JSON="{\"v\":\"2\",\"ps\":\"ZERO-VMESS\",\"add\":\"vpn.googleapis.com\",\"port\":\"443\",\"id\":\"${UUID}\",\"aid\":\"0\",\"scy\":\"auto\",\"net\":\"ws\",\"type\":\"none\",\"host\":\"${HOST}\",\"path\":\"/@mgmyomin1-vmess\",\"tls\":\"tls\",\"sni\":\"${HOST}\",\"alpn\":\"\"}"
 VMESS_BASE64=$(echo -n "$VMESS_JSON" | base64 -w 0)
 VMESS_LINK="vmess://${VMESS_BASE64}"
 
-# 3. Trojan WS Link
+# 3. Trojan
 TROJAN_LINK="trojan://${TROJAN_PW}@vpn.googleapis.com:443?path=%2F%40mgmyomin1-trojan&security=tls&host=${HOST}&type=ws&sni=${HOST}#ZERO-TROJAN"
 
 # ===== Telegram Notification =====
@@ -142,7 +148,7 @@ MSG=$(cat <<EOF
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 <blockquote>🌍 <b>Region:</b> ${REGION}
 🔗 <b>Host:</b> ${HOST}
-⚙️ <b>Protocols:</b> VLESS + VMess + Trojan</blockquote>
+⚙️ <b>Resources:</b> ${CPU} vCPU / ${MEMORY} RAM</blockquote>
 
 <b>1️⃣ VLESS WS:</b>
 <pre><code>${VLESS_LINK}</code></pre>
