@@ -18,11 +18,11 @@
         "decryption": "none",
         "fallbacks": [
           {
-            "path": "/@mgmyomin1-vmess",
+            "path": "/@tg-1011-vmess",
             "dest": 1001
           },
           {
-            "path": "/@mgmyomin1-trojan",
+            "path": "/@tg-1011-trojan",
             "dest": 1002
           }
         ]
@@ -30,8 +30,17 @@
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/@mgmyomin1-vless"
-        }
+          "path": "/@tg-1011",
+          "headers": {
+            "Host": ""
+          }
+        },
+        "security": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"],
+        "metadataOnly": false
       }
     },
     {
@@ -48,8 +57,12 @@
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/@mgmyomin1-vmess"
+          "path": "/@tg-1011-vmess"
         }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
       }
     },
     {
@@ -66,15 +79,20 @@
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/@mgmyomin1-trojan"
+          "path": "/@tg-1011-trojan"
         }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
       }
     }
   ],
   "outbounds": [
     {
       "protocol": "freedom",
-      "settings": {}
+      "settings": {},
+      "tag": "direct"
     },
     {
       "protocol": "blackhole",
@@ -88,8 +106,41 @@
       {
         "type": "field",
         "outboundTag": "blocked",
-        "domain": ["geosite:category-ads-all"]
+        "domain": [
+          "geosite:category-ads-all"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "domain": [
+          "geosite:google",
+          "geosite:facebook",
+          "geosite:twitter",
+          "geosite:telegram",
+          "geosite:whatsapp",
+          "geosite:netflix",
+          "geosite:youtube",
+          "geosite:github",
+          "geosite:cloudflare"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "direct",
+        "ip": [
+          "geoip:private",
+          "geoip:cn",
+          "geoip:mm"
+        ]
       }
+    ]
+  },
+  "dns": {
+    "servers": [
+      "8.8.8.8",
+      "1.1.1.1",
+      "localhost"
     ]
   }
 }
