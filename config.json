@@ -19,25 +19,19 @@
         "fallbacks": [
           {
             "path": "/@mgmyomin1-vmess",
-            "dest": 1001,
-            "xver": 1
+            "dest": 1001
           },
           {
             "path": "/@mgmyomin1-trojan",
-            "dest": 1002,
-            "xver": 1
+            "dest": 1002
           }
         ]
       },
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/@mgmyomin1-vless",
-          "headers": {
-            "Host": ""
-          }
-        },
-        "security": "none"
+          "path": "/@mgmyomin1-vless"
+        }
       }
     },
     {
@@ -80,8 +74,7 @@
   "outbounds": [
     {
       "protocol": "freedom",
-      "settings": {},
-      "tag": "direct"
+      "settings": {}
     },
     {
       "protocol": "blackhole",
